@@ -1,30 +1,44 @@
-# @n11x/ghostnet-sdk
+# Atlas SDK (`@n11x/atlas`)
+
+> **Architecture note:** This is a network SDK, not an AI SDK. The separate
+> `@n11x/ghostnet-cli` Rust command runs a Node bridge that currently imports
+> `@n11x/ghostnet-sdk`. Atlas uses the same GhostNet relay protocol.
+> It does not expose a daemon, socket, or persisted identity for SDK clients
+> to attach to. Both connect independently to a compatible WebSocket relay.
+
+See [CLI integration](./docs/cli-integration.md) for installation, discovery,
+identity loading, supported operations, security, and troubleshooting.
 
 TypeScript SDK for integrating with the **GhostNet** encrypted mesh network.
 
-GhostNet is a privacy-first peer-to-peer mesh built by [N11X Labs](https://github.com/n11x).
-This SDK lets third-party apps join the mesh as a node — inheriting end-to-end
-encryption, identity management, and private messaging out of the box.
+Atlas implements a relay client compatible with the GhostNet CLI. It provides
+identity derivation, signed encrypted messages, and WebSocket transport.
 
-**Runtimes:** Node 18+, modern browsers, React Native.
+**Runtime:** Node.js 18+. A browser bundle is built, but browser and React Native
+network integration are not verified by the Node test suite.
 
 ## Install
 
 ```bash
-npm install @n11x/ghostnet-sdk
+npm install @n11x/atlas
 ```
+
+For the separate CLI, run `npm install -g @n11x/ghostnet-cli`, then
+`ghostnet setup` and `ghostnet identity create`. Save the printed phrase
+privately. The CLI and SDK need the same phrase and relay URL to use the same
+network identity. The CLI never stores a default phrase for the SDK to read.
 
 ## Quickstart
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { Atlas } from '@n11x/atlas';
 
-const gn = new GhostNet({ debug: true });
+const gn = new Atlas({ debug: true });
 
-// Create a new identity (or restore with gn.loadIdentity(seedPhrase))
-const identity = gn.createIdentity();
+// Explicitly restore the same identity used by the CLI.
+const identity = gn.loadIdentity(process.env.GHOSTNET_SEED!);
 console.log('Node ID:', identity.nodeId);
-console.log('Seed phrase:', identity.seedPhrase); // back this up!
+// Keep the seed phrase private; the CLI does not save a default identity.
 
 // Connect to the mesh
 await gn.connect();
@@ -35,11 +49,32 @@ gn.on('message', (msg) => {
 });
 
 // Send an encrypted message to a peer
-await gn.send('0x<peer-node-id>', 'hello from the mesh!');
+const peer = gn.addPeer(process.env.GHOSTNET_PEER_PUBLIC_KEY!);
+await gn.send(peer.nodeId, 'hello from the mesh!');
 
 // Disconnect when done
 gn.disconnect();
 ```
+
+The recipient public key must be confirmed through a trusted channel before
+calling `addPeer`. Alternatively, the SDK learns a key from a signed peer
+announcement or message. `listPeers()` reports keys known in this process;
+it is not an online directory. `getStatus()` reports local WebSocket state.
+`send()` confirms a WebSocket write; this relay protocol has no delivery receipt.
+`getPublicIdentity()` is safe for display, while `getIdentity()` includes secrets.
+Use `subscribe(event, handler)` for a cleanup function or `on`/`off` for manual
+subscription management. A connection error or `PeerNotFoundError` indicates a
+missing relay connection or recipient key, respectively.
+`requireEncryption` defaults to `true`; setting it to `false` explicitly
+allows signed plaintext fallback and should not be used for sensitive data.
+The relay can observe routing metadata. The SDK adds no telemetry or AI APIs.
+`GhostNet` remains an export alias for existing application code.
+
+Node consumers can call `inspectCli()` from `@n11x/atlas/cli`, or pass
+an explicit executable path. It discovers the native CLI, checks its version
+against the verified 0.2.x line, and reports whether `ghostnet setup` installed
+the bridge. The CLI is optional for direct SDK use and is never installed or
+launched automatically by this package. There is no local CLI daemon or IPC.
 
 ## Documentation
 
@@ -54,7 +89,7 @@ gn.disconnect();
 
 ## API
 
-### `new GhostNet(options?)`
+### `new Atlas(options?)`
 
 | Option     | Type      | Default                            | Description             |
 | ---------- | --------- | ---------------------------------- | ----------------------- |
@@ -68,6 +103,9 @@ gn.disconnect();
 | `.createIdentity()`           | `Identity` | Generate a new BIP-39 identity           |
 | `.loadIdentity(seedPhrase)`   | `Identity` | Restore identity from a 12-word mnemonic |
 | `.getIdentity()`              | `Identity \| null` | Current identity                  |
+| `.getPublicIdentity()`        | Public identity or null | Public node ID and key |
+| `.addPeer(publicKey)`         | `PeerInfo` | Register a verified recipient key |
+| `.listPeers()`                | `PeerInfo[]` | Locally known peer keys |
 
 ### Connection
 
@@ -75,6 +113,7 @@ gn.disconnect();
 | --------------- | --------------- | ---------------------------- |
 | `.connect()`    | `Promise<void>` | Connect to the mesh relay    |
 | `.disconnect()`  | `void`          | Gracefully disconnect        |
+| `.getStatus()`   | `NetworkStatus` | Local connection state       |
 
 ### Messaging
 
@@ -99,6 +138,8 @@ All errors extend `GhostNetError` (which extends `Error`):
 - `IdentityError` — invalid seed phrase or key derivation failure
 - `EncryptionError` — encrypt/decrypt failures
 - `PeerNotFoundError` — unknown or unreachable peer (includes `.peerId`)
+- `PeerVerificationError` — invalid recipient or public key
+- `PayloadTooLargeError` — message exceeds 64 KiB
 
 ## Crypto Scheme
 
@@ -127,7 +168,8 @@ All crypto primitives use audited [noble](https://paulmillr.com/noble/) librarie
 ## Security
 
 - E2E encrypted messaging (X25519 + AES-256-GCM)
-- Forward secrecy via ephemeral keys
+- Ephemeral sender keys per encrypted message; compromise of a recipient's
+  static identity key may still expose recorded past ciphertexts
 - Private keys excluded from JSON serialization
 - `wss://` enforced — insecure endpoints rejected
 - No telemetry, no analytics, no phone-home

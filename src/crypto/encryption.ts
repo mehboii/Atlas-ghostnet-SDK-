@@ -42,12 +42,15 @@ export function encrypt(
   plaintext: string,
   recipientX25519Pub: Uint8Array,
 ): Uint8Array {
+  let ephemeralPriv: Uint8Array | null = null;
+  let shared: Uint8Array | null = null;
+  let aesKey: Uint8Array | null = null;
   try {
-    const ephemeralPriv = x25519.utils.randomPrivateKey();
+    ephemeralPriv = x25519.utils.randomPrivateKey();
     const ephemeralPub = x25519.getPublicKey(ephemeralPriv);
-    const shared = x25519.getSharedSecret(ephemeralPriv, recipientX25519Pub);
+    shared = x25519.getSharedSecret(ephemeralPriv, recipientX25519Pub);
 
-    const aesKey = deriveAesKey(shared);
+    aesKey = deriveAesKey(shared);
     const nonce = randomBytes(NONCE_LENGTH);
 
     const plaintextBytes = new TextEncoder().encode(plaintext);
@@ -67,6 +70,10 @@ export function encrypt(
     throw new EncryptionError(
       `Encryption failed: ${err instanceof Error ? err.message : String(err)}`,
     );
+  } finally {
+    if (ephemeralPriv) ephemeralPriv.fill(0);
+    if (shared) shared.fill(0);
+    if (aesKey) aesKey.fill(0);
   }
 }
 
@@ -88,6 +95,8 @@ export function decrypt(
   packet: Uint8Array,
   recipientX25519Priv: Uint8Array,
 ): string {
+  let shared: Uint8Array | null = null;
+  let aesKey: Uint8Array | null = null;
   try {
     if (packet.length < EPHEMERAL_PUB_LENGTH + NONCE_LENGTH + 16) {
       throw new Error('Packet too short');
@@ -100,8 +109,8 @@ export function decrypt(
     );
     const ciphertext = packet.slice(EPHEMERAL_PUB_LENGTH + NONCE_LENGTH);
 
-    const shared = x25519.getSharedSecret(recipientX25519Priv, ephemeralPub);
-    const aesKey = deriveAesKey(shared);
+    shared = x25519.getSharedSecret(recipientX25519Priv, ephemeralPub);
+    aesKey = deriveAesKey(shared);
     const cipher = gcm(aesKey, nonce);
     const plaintextBytes = cipher.decrypt(ciphertext);
 
@@ -111,6 +120,9 @@ export function decrypt(
     throw new EncryptionError(
       `Decryption failed: ${err instanceof Error ? err.message : String(err)}`,
     );
+  } finally {
+    if (shared) shared.fill(0);
+    if (aesKey) aesKey.fill(0);
   }
 }
 

@@ -1,14 +1,15 @@
 {
-  "name": "@n11x/ghostnet-sdk",
+  "name": "@n11x/atlas",
   "version": "0.2.0",
-  "description": "TypeScript SDK for integrating with the GhostNet encrypted mesh network",
+  "description": "Atlas SDK for the GhostNet encrypted mesh network",
   "license": "MIT",
   "author": "N11X Labs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/n11x/ghostnet-sdk.git"
+    "url": "git+https://github.com/n11x/ghostnet-sdk.git"
   },
   "keywords": [
+    "atlas",
     "ghostnet",
     "mesh-network",
     "encryption",
@@ -30,10 +31,21 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./cli": {
+      "import": {
+        "types": "./dist/cli.d.ts",
+        "default": "./dist/cli.js"
+      },
+      "require": {
+        "types": "./dist/cli.d.cts",
+        "default": "./dist/cli.cjs"
+      }
     }
   },
   "files": [
     "dist",
+    "docs/*.md",
     "LICENSE",
     "README.md"
   ],
@@ -52,7 +64,7 @@
     "bench": "npx tsx benchmarks/crypto.bench.ts",
     "docs": "typedoc",
     "release": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs}": [

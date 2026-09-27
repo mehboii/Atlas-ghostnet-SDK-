@@ -156,7 +156,7 @@ describe('VULN-02 FIXED: Nonce and timestamp now required', () => {
 // ─────────────────────────────────────────────────────────────
 describe('VULN-03 FIXED: Nonce eviction is time-based, not count-based', () => {
   it('nonce registry uses time-based expiry — recent nonces survive eviction sweeps', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const id = gn.createIdentity();
 
     const secEvents: SecurityEvent[] = [];
@@ -301,7 +301,7 @@ describe('VULN-04 FIXED: Sender identity cryptographically verified', () => {
   });
 
   it('properly signed messages ARE accepted', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const id = gn.createIdentity();
 
     const messages: Array<{ from: string; data: string }> = [];
@@ -366,7 +366,7 @@ describe('VULN-05 FIXED: Plaintext fallback refused', () => {
     };
     internals(gn).transport = mockTransport;
 
-    await expect(gn.send('0xunknown-peer', 'TOP SECRET')).rejects.toThrow('Peer not found');
+    await expect(gn.send('0x' + 'ab'.repeat(32), 'TOP SECRET')).rejects.toThrow('Peer not found');
   });
 
   it('send() allows plaintext when requireEncryption=false (explicit opt-in)', async () => {
@@ -387,7 +387,7 @@ describe('VULN-05 FIXED: Plaintext fallback refused', () => {
     };
     internals(gn).transport = mockTransport;
 
-    await gn.send('0xunknown-peer', 'hello');
+    await gn.send('0x' + 'ab'.repeat(32), 'hello');
 
     const envelope = JSON.parse(sent[0]);
     expect(envelope.encrypted).toBe(false);
@@ -443,7 +443,7 @@ describe('VULN-06 FIXED: TOFU key pinning', () => {
   });
 
   it('TOFU via signed messages pins the key', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const id = gn.createIdentity();
 
     const handleIncoming = internals(gn).handleIncoming.bind(gn);
@@ -466,7 +466,7 @@ describe('VULN-08 FIXED: Security events visible in production mode', () => {
   it('replay detection emits security event even with debug=false', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
-    gn.createIdentity();
+    const id = gn.createIdentity();
 
     const secEvents: SecurityEvent[] = [];
     gn.on('security', (evt) => secEvents.push(evt));
@@ -475,8 +475,8 @@ describe('VULN-08 FIXED: Security events visible in production mode', () => {
 
     const sender = createIdentity();
     const nonce = 'test-nonce-123';
-    const env1 = makeSignedEnvelope(sender, '', 'hello', { nonce });
-    const env2 = makeSignedEnvelope(sender, '', 'hello', { nonce });
+    const env1 = makeSignedEnvelope(sender, id.nodeId, 'hello', { nonce });
+    const env2 = makeSignedEnvelope(sender, id.nodeId, 'hello', { nonce });
 
     await handleIncoming(JSON.stringify(env1));
     await handleIncoming(JSON.stringify(env2));
@@ -649,7 +649,7 @@ describe('CHAIN EXPLOIT: "Ghost Relay" — Full MITM Prevention', () => {
     internals(gn).transport = mockTransport;
 
     // Without peer key, send is refused — relay cannot trick us into plaintext
-    await expect(gn.send('0xbob', 'secret message')).rejects.toThrow('Peer not found');
+    await expect(gn.send('0x' + 'ab'.repeat(32), 'secret message')).rejects.toThrow('Peer not found');
   });
 
   it('Step 2-3: spoofed + unsigned messages are BLOCKED', async () => {
@@ -678,7 +678,7 @@ describe('CHAIN EXPLOIT: "Ghost Relay" — Full MITM Prevention', () => {
   });
 
   it('Step 4: replayed messages are BLOCKED even after nonce flood', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const id = gn.createIdentity();
 
     const messages: Array<{ from: string; data: string }> = [];
@@ -771,7 +771,8 @@ describe('CHAIN EXPLOIT: "Ghost Relay" — Full MITM Prevention', () => {
 
     // Attack 5: Valid signature but replayed
     const sender = createIdentity();
-    const env = makeSignedEnvelope(sender, id.nodeId, 'once');
+    const payload = Buffer.from(encrypt('once', edPublicToX25519(id.publicKeyBytes))).toString('base64');
+    const env = makeSignedEnvelope(sender, id.nodeId, payload, { encrypted: true });
     await handleIncoming(JSON.stringify(env));
     await handleIncoming(JSON.stringify(env)); // replay
 
@@ -841,7 +842,7 @@ describe('CHAIN EXPLOIT: "Zombie Identity" — Post-Dispose Prevention', () => {
 // ─────────────────────────────────────────────────────────────
 describe('CHAIN EXPLOIT: "Nonce Flood → Replay → Spoof" Prevention', () => {
   it('attack chain is broken at every link', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const id = gn.createIdentity();
 
     const messages: Array<{ from: string; data: string }> = [];

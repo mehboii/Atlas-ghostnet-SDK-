@@ -9,7 +9,7 @@ import {
   IdentityError,
   EncryptionError,
   PeerNotFoundError,
-} from '@n11x/ghostnet-sdk';
+} from '@n11x/atlas';
 ```
 
 ## Error Hierarchy
@@ -116,7 +116,7 @@ gn.on('error', (err) => {
 ## Recommended Error Handling Pattern
 
 ```ts
-import { GhostNet, GhostNetError, ConnectionError, PeerNotFoundError } from '@n11x/ghostnet-sdk';
+import { GhostNet, GhostNetError, ConnectionError, PeerNotFoundError } from '@n11x/atlas';
 
 const gn = new GhostNet({ debug: true });
 

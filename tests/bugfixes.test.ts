@@ -83,7 +83,7 @@ describe('Bug B: nonce registry is bounded under sustained load', () => {
 // ─────────────────────────────────────────────────────────────
 describe('Bug C: nonce recorded only after signature + freshness pass', () => {
   it('forged-signature message does not consume the nonce', async () => {
-    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test', requireEncryption: false });
     const me = gn.createIdentity();
 
     const messages: Array<{ from: string; data: string }> = [];

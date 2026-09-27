@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig([
   {
-    entry: ['src/index.ts'],
+    entry: ['src/index.ts', 'src/cli.ts'],
     format: ['esm', 'cjs'],
     dts: true,
     sourcemap: true,
@@ -15,7 +15,7 @@ export default defineConfig([
   {
     entry: ['src/index.ts'],
     format: ['iife'],
-    globalName: 'GhostNetSDK',
+    globalName: 'AtlasSDK',
     sourcemap: true,
     splitting: false,
     treeshake: true,
