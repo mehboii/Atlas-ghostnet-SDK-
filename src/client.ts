@@ -1,9 +1,18 @@
 import { createIdentity, loadIdentity } from './crypto/identity.js';
 import { encrypt, decrypt, edPrivateToX25519, edPublicToX25519 } from './crypto/encryption.js';
 import { sign, verify } from './crypto/signing.js';
-import { ConnectionError, PeerNotFoundError, PayloadTooLargeError, PeerVerificationError } from './errors.js';
+import {
+  ConnectionError,
+  PeerNotFoundError,
+  PayloadTooLargeError,
+  PeerVerificationError,
+  IdentityError,
+  EncryptionError,
+  RelayError,
+} from './errors.js';
 import { Logger } from './logger.js';
 import { Transport } from './transport.js';
+import { endpointOrigin } from './endpoint.js';
 import type { GhostNetOptions, GhostNetEvents, Identity, IncomingMessage, SecurityEvent, PeerInfo, NetworkStatus } from './types.js';
 import { hexToBytes, bytesToHex, randomBytes } from '@noble/hashes/utils';
 import { blake3 } from '@noble/hashes/blake3';
@@ -15,14 +24,14 @@ const MESSAGE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes — reject older messages
 const SIGNATURE_VERSION = 'v1';
 
 /**
- * Main GhostNet SDK client.
+ * Main Atlas SDK client.
  *
  * Creates or restores an identity, connects to the GhostNet mesh relay,
  * and lets you send/receive end-to-end encrypted messages.
  *
  * @example
  * ```ts
- * import { GhostNet } from '@n11x/ghostnet-sdk';
+ * import { GhostNet } from '@n11x/atlas';
  *
  * const gn = new GhostNet({ debug: true });
  * const identity = gn.createIdentity();
@@ -67,7 +76,7 @@ export class GhostNet {
   private static validateEndpoint(endpoint: string): string {
     if (!endpoint.startsWith('wss://')) {
       throw new ConnectionError(
-        `Insecure WebSocket endpoint rejected: "${endpoint}". Use wss:// for encrypted connections.`,
+        'Insecure WebSocket endpoint rejected. Use wss:// for encrypted connections.',
       );
     }
 
@@ -75,7 +84,7 @@ export class GhostNet {
     try {
       parsed = new URL(endpoint);
     } catch {
-      throw new ConnectionError(`Invalid endpoint URL: "${endpoint}"`);
+      throw new ConnectionError('Invalid endpoint URL');
     }
 
     if (parsed.username || parsed.password) {
@@ -157,7 +166,7 @@ export class GhostNet {
   getStatus(): NetworkStatus {
     return {
       connected: this.transport?.connected ?? false,
-      endpoint: this.endpoint,
+      endpoint: endpointOrigin(this.endpoint),
       nodeId: this.identity?.nodeId ?? null,
       knownPeers: this.peerInfo.size,
     };
@@ -250,6 +259,16 @@ export class GhostNet {
    * @throws {EncryptionError} If encryption fails.
    */
   async send(peerId: string, message: string): Promise<void> {
+    if (!this.identity) {
+      throw new IdentityError('Create or load an identity before sending messages');
+    }
+
+    try {
+      void this.identity.seedPhrase;
+    } catch {
+      throw new IdentityError('Identity has been disposed — cannot send messages');
+    }
+
     const transport = this.transport;
     if (!transport?.connected) {
       throw new ConnectionError('Not connected — call .connect() first');
@@ -548,11 +567,18 @@ export class GhostNet {
       signature?: string;
       senderPublicKey?: string;
       nonce?: string;
+      code?: string;
+      relayCode?: string;
     };
     try {
       envelope = JSON.parse(text) as typeof envelope;
     } catch {
       this.logger.warn('Received non-JSON message, ignoring');
+      return;
+    }
+
+    if (!envelope || typeof envelope !== 'object' || typeof envelope.type !== 'string') {
+      this.logger.warn('Received invalid envelope structure, ignoring');
       return;
     }
 
@@ -650,9 +676,15 @@ export class GhostNet {
       let data: string;
 
       if (envelope.encrypted) {
-        const x25519Priv = edPrivateToX25519(this.identity!.privateKeyBytes);
-        const ciphertextBytes = base64ToUint8(envelope.payload);
-        data = decrypt(ciphertextBytes, x25519Priv);
+        try {
+          const x25519Priv = edPrivateToX25519(this.identity!.privateKeyBytes);
+          const ciphertextBytes = base64ToUint8(envelope.payload);
+          data = decrypt(ciphertextBytes, x25519Priv);
+        } catch (err) {
+          throw err instanceof EncryptionError
+            ? err
+            : new EncryptionError(`Failed to decrypt payload: ${err instanceof Error ? err.message : String(err)}`);
+        }
       } else {
         data = envelope.payload;
       }
@@ -670,7 +702,8 @@ export class GhostNet {
       if (errPayload.includes('peer not found') && envelope.from) {
         this.emit('error', new PeerNotFoundError(envelope.from));
       } else {
-        this.emit('error', new ConnectionError(errPayload));
+        const relayCode = envelope.relayCode ?? envelope.code ?? 'ERR_RELAY';
+        this.emit('error', new RelayError(errPayload, relayCode));
       }
     }
   }

@@ -1,5 +1,6 @@
 import { ConnectionError } from './errors.js';
 import { Logger } from './logger.js';
+import { endpointOrigin } from './endpoint.js';
 
 const DEFAULT_RECONNECT_BASE_MS = 1000;
 const DEFAULT_RECONNECT_MAX_MS = 30_000;
@@ -133,17 +134,42 @@ export class Transport {
     return this.ws?.readyState === WEBSOCKET_OPEN;
   }
 
+  private wsClass: typeof WebSocket | null = typeof globalThis.WebSocket !== 'undefined' ? globalThis.WebSocket : null;
+
+  private async resolveWebSocketClass(): Promise<typeof WebSocket> {
+    if (this.wsClass) return this.wsClass;
+    if (typeof globalThis.WebSocket !== 'undefined') {
+      this.wsClass = globalThis.WebSocket;
+      return this.wsClass;
+    }
+    const wsPkg = 'ws';
+    const wsModule = await import(wsPkg);
+    this.wsClass = (wsModule.default ?? wsModule) as unknown as typeof WebSocket;
+    return this.wsClass;
+  }
+
   private createSocket(): Promise<void> {
+    const directWS = typeof globalThis.WebSocket !== 'undefined' ? globalThis.WebSocket : this.wsClass;
+    if (directWS) {
+      return this.initSocket(directWS);
+    }
+    return this.resolveWebSocketClass().then((WS) => {
+      if (this.intentionalClose) return;
+      return this.initSocket(WS);
+    });
+  }
+
+  private initSocket(WS: typeof WebSocket): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.logger.debug(`Connecting to ${this.url}`);
+      this.logger.debug(`Connecting to ${endpointOrigin(this.url)}`);
 
-      // Use native WebSocket in browsers, ws package in Node
-      const WS = typeof globalThis.WebSocket !== 'undefined'
-        ? globalThis.WebSocket
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- conditional require for Node.js; dynamic import() cannot be used synchronously here
-        : (require('ws') as typeof WebSocket);
-
-      const ws = new WS(this.url);
+      let ws: WebSocket;
+      try {
+        ws = new WS(this.url);
+      } catch {
+        reject(new ConnectionError(`Unable to open WebSocket on ${endpointOrigin(this.url)}`));
+        return;
+      }
       // Node ws needs binaryType set for Uint8Array
       ws.binaryType = 'arraybuffer';
 
@@ -184,7 +210,7 @@ export class Transport {
       };
 
       ws.onerror = () => {
-        const err = new ConnectionError(`WebSocket error on ${this.url}`);
+        const err = new ConnectionError(`WebSocket error on ${endpointOrigin(this.url)}`);
         this.emit('error', err);
         // If the socket never opened, reject the initial connection promise.
         if (!settled) {

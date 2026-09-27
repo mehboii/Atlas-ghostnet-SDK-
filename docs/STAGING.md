@@ -7,7 +7,7 @@ By default, the SDK connects to the production relay at `wss://ghostnet-ji-produ
 Pass a custom WebSocket URL when constructing the client:
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const gn = new GhostNet({
   endpoint: 'wss://staging-relay.example.com',

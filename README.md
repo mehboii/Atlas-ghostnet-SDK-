@@ -1,7 +1,8 @@
-# @n11x/ghostnet-sdk
+# Atlas SDK (`@n11x/atlas`)
 
 > **Architecture note:** This is a network SDK, not an AI SDK. The separate
-> `@n11x/ghostnet-cli` Rust command runs a Node bridge that imports this SDK.
+> `@n11x/ghostnet-cli` Rust command runs a Node bridge that currently imports
+> `@n11x/ghostnet-sdk`. Atlas uses the same GhostNet relay protocol.
 > It does not expose a daemon, socket, or persisted identity for SDK clients
 > to attach to. Both connect independently to a compatible WebSocket relay.
 
@@ -10,7 +11,7 @@ identity loading, supported operations, security, and troubleshooting.
 
 TypeScript SDK for integrating with the **GhostNet** encrypted mesh network.
 
-This package implements the GhostNet relay client used by the CLI. It provides
+Atlas implements a relay client compatible with the GhostNet CLI. It provides
 identity derivation, signed encrypted messages, and WebSocket transport.
 
 **Runtime:** Node.js 18+. A browser bundle is built, but browser and React Native
@@ -19,7 +20,7 @@ network integration are not verified by the Node test suite.
 ## Install
 
 ```bash
-npm install @n11x/ghostnet-sdk
+npm install @n11x/atlas
 ```
 
 For the separate CLI, run `npm install -g @n11x/ghostnet-cli`, then
@@ -30,9 +31,9 @@ network identity. The CLI never stores a default phrase for the SDK to read.
 ## Quickstart
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { Atlas } from '@n11x/atlas';
 
-const gn = new GhostNet({ debug: true });
+const gn = new Atlas({ debug: true });
 
 // Explicitly restore the same identity used by the CLI.
 const identity = gn.loadIdentity(process.env.GHOSTNET_SEED!);
@@ -67,8 +68,9 @@ missing relay connection or recipient key, respectively.
 `requireEncryption` defaults to `true`; setting it to `false` explicitly
 allows signed plaintext fallback and should not be used for sensitive data.
 The relay can observe routing metadata. The SDK adds no telemetry or AI APIs.
+`GhostNet` remains an export alias for existing application code.
 
-Node consumers can call `inspectCli()` from `@n11x/ghostnet-sdk/cli`, or pass
+Node consumers can call `inspectCli()` from `@n11x/atlas/cli`, or pass
 an explicit executable path. It discovers the native CLI, checks its version
 against the verified 0.2.x line, and reports whether `ghostnet setup` installed
 the bridge. The CLI is optional for direct SDK use and is never installed or
@@ -87,7 +89,7 @@ launched automatically by this package. There is no local CLI daemon or IPC.
 
 ## API
 
-### `new GhostNet(options?)`
+### `new Atlas(options?)`
 
 | Option     | Type      | Default                            | Description             |
 | ---------- | --------- | ---------------------------------- | ----------------------- |

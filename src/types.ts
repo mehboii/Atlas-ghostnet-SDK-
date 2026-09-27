@@ -19,6 +19,7 @@ export interface PeerInfo {
 /** Local client state. Relay health is limited to WebSocket state; it is not a delivery receipt. */
 export interface NetworkStatus {
   connected: boolean;
+  /** Relay origin for display; path and query are omitted to protect credentials. */
   endpoint: string;
   nodeId: string | null;
   knownPeers: number;

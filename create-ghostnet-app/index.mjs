@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * create-ghostnet-app — Scaffold a new GhostNet SDK project.
+ * create-ghostnet-app — Scaffold a new Atlas SDK project.
  *
  * Usage:
  *   npx create-ghostnet-app my-app
@@ -51,7 +51,7 @@ writeFileSync(join(projectDir, 'package.json'), JSON.stringify({
     dev: 'node --loader ts-node/esm --watch src/index.ts',
   },
   dependencies: {
-    '@n11x/ghostnet-sdk': 'latest',
+    '@n11x/atlas': 'latest',
   },
   devDependencies: {
     'typescript': '^5.0.0',
@@ -84,28 +84,28 @@ dist/
 `);
 
 // .env.example
-writeFileSync(join(projectDir, '.env.example'), `# GhostNet SDK Configuration
+writeFileSync(join(projectDir, '.env.example'), `# Atlas SDK Configuration
 # GHOSTNET_RELAY_URL=wss://staging-relay.example.com
 # GHOSTNET_DEBUG=true
 `);
 
 // Source file based on template
 const templates = {
-  minimal: `import { GhostNet } from '@n11x/ghostnet-sdk';
+  minimal: `import { Atlas } from '@n11x/atlas';
 
-const gn = new GhostNet({ debug: true });
+const gn = new Atlas({ debug: true });
 const identity = gn.createIdentity();
 
 console.log('Your GhostNet Node ID:', identity.nodeId);
 console.log('Save your seed phrase securely:', identity.seedPhrase);
 `,
 
-  default: `import { GhostNet, ConnectionError, PeerNotFoundError } from '@n11x/ghostnet-sdk';
-import type { IncomingMessage } from '@n11x/ghostnet-sdk';
+  default: `import { Atlas, ConnectionError, PeerNotFoundError } from '@n11x/atlas';
+import type { IncomingMessage } from '@n11x/atlas';
 
 async function main() {
   // Initialize the SDK
-  const gn = new GhostNet({
+  const gn = new Atlas({
     endpoint: process.env.GHOSTNET_RELAY_URL || undefined,
     debug: process.env.GHOSTNET_DEBUG === 'true',
   });
@@ -169,7 +169,7 @@ writeFileSync(join(projectDir, 'src/index.ts'), sourceCode);
 // README
 writeFileSync(join(projectDir, 'README.md'), `# ${projectName}
 
-Built with [@n11x/ghostnet-sdk](https://github.com/n11x/ghostnet-sdk).
+Built with [@n11x/atlas](https://github.com/n11x/ghostnet-sdk).
 
 ## Getting Started
 

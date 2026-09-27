@@ -1,4 +1,4 @@
-# Contributing to @n11x/ghostnet-sdk
+# Contributing to @n11x/atlas
 
 Thanks for your interest in contributing! This document covers the workflow and conventions we follow.
 

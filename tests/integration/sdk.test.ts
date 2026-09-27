@@ -1,5 +1,5 @@
 /**
- * Integration tests for @n11x/ghostnet-sdk
+ * Integration tests for @n11x/atlas
  *
  * These tests exercise the SDK's public API surface as an external developer would use it.
  * They cover identity creation/restoration, connection lifecycle, messaging, and error cases.

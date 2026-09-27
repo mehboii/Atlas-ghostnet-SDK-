@@ -1,18 +1,20 @@
 /**
- * @n11x/ghostnet-sdk — TypeScript SDK for the GhostNet encrypted mesh network.
+ * @n11x/atlas — Atlas SDK for the GhostNet encrypted mesh network.
  *
  * @packageDocumentation
  */
 
 // ── Main client ─────────────────────────────────────────────────────
-export { GhostNet } from './client.js';
+export { GhostNet, GhostNet as Atlas } from './client.js';
 
 // ── Types ───────────────────────────────────────────────────────────
 export type {
   GhostNetOptions,
+  GhostNetOptions as AtlasOptions,
   Identity,
   IncomingMessage,
   GhostNetEvents,
+  GhostNetEvents as AtlasEvents,
   SecurityEvent,
   PeerInfo,
   NetworkStatus,

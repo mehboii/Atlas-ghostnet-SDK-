@@ -15,7 +15,7 @@ export default defineConfig([
   {
     entry: ['src/index.ts'],
     format: ['iife'],
-    globalName: 'GhostNetSDK',
+    globalName: 'AtlasSDK',
     sourcemap: true,
     splitting: false,
     treeshake: true,

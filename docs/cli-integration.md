@@ -1,6 +1,6 @@
 # CLI and SDK integration
 
-The `@n11x/ghostnet-cli` package exposes the `ghostnet` command. `ghostnet setup` installs its Node bridge at `~/.ghostnet-cli/bridge`; the bridge imports `@n11x/ghostnet-sdk`. `ghostnet identity create` prints a BIP-39 phrase. `ghostnet identity load` checks a phrase for that command only. `ghostnet send` and `ghostnet listen` use `GHOSTNET_SEED` or `--seed` to load an identity for their own process. A CLI process is not an attachable node. The SDK connects directly to the same compatible relay using the same core implementation and phrase.
+The `@n11x/ghostnet-cli` package exposes the `ghostnet` command. `ghostnet setup` installs its Node bridge at `~/.ghostnet-cli/bridge`; the current CLI bridge imports `@n11x/ghostnet-sdk`. Atlas is a separate package with the same GhostNet relay protocol. `ghostnet identity create` prints a BIP-39 phrase. `ghostnet identity load` checks a phrase for that command only. `ghostnet send` and `ghostnet listen` use `GHOSTNET_SEED` or `--seed` to load an identity for their own process. A CLI process is not an attachable node. Atlas connects directly to the compatible relay using the same phrase.
 
 ```sh
 npm install -g @n11x/ghostnet-cli
@@ -11,13 +11,13 @@ ghostnet identity create
 The SDK must explicitly restore the identity:
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
-import { inspectCli } from '@n11x/ghostnet-sdk/cli';
+import { Atlas } from '@n11x/atlas';
+import { inspectCli } from '@n11x/atlas/cli';
 
 const cli = await inspectCli();
 if (cli.available && !cli.compatible) throw new Error(cli.detail);
 
-const gn = new GhostNet();
+const gn = new Atlas();
 gn.loadIdentity(process.env.GHOSTNET_SEED!);
 const stop = gn.subscribe('message', (message) => console.log(message.from, message.data));
 try {
