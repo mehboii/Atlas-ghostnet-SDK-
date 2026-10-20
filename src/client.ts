@@ -13,6 +13,7 @@ const MAX_MESSAGE_BYTES = 64 * 1024; // 64 KB max message payload
 const NONCE_REGISTRY_MAX = 10_000;   // Max tracked nonces before time-based eviction
 const MESSAGE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes — reject older messages
 const SIGNATURE_VERSION = 'v1';
+type NonceCheckResult = 'accepted' | 'replay' | 'capacity_exceeded';
 
 /**
  * Main GhostNet SDK client.
@@ -310,9 +311,9 @@ export class GhostNet {
    * Uses time-based expiration instead of count-based eviction to prevent
    * nonce-flood replay attacks.
    */
-  private checkNonce(nonce: string, timestamp: number): boolean {
+  private checkNonce(nonce: string, timestamp: number): NonceCheckResult {
     if (this.seenNonces.has(nonce)) {
-      return false;
+      return 'replay';
     }
 
     // Time-based eviction: remove nonces older than MESSAGE_MAX_AGE_MS
@@ -325,8 +326,15 @@ export class GhostNet {
       }
     }
 
+    // Fail closed when the registry is full of still-fresh nonces. Evicting
+    // one would allow an authenticated flood to remove replay evidence for a
+    // captured message that is still inside the freshness window.
+    if (this.seenNonces.size >= NONCE_REGISTRY_MAX) {
+      return 'capacity_exceeded';
+    }
+
     this.seenNonces.set(nonce, timestamp);
-    return true;
+    return 'accepted';
   }
 
   /**
@@ -518,10 +526,13 @@ export class GhostNet {
       }
 
       // FIX VULN-03: Time-based nonce registry prevents flood-eviction replay
-      if (!this.checkNonce(envelope.nonce, envelope.timestamp)) {
+      const nonceResult = this.checkNonce(envelope.nonce, envelope.timestamp);
+      if (nonceResult !== 'accepted') {
         this.emitSecurity(
-          'replay_detected',
-          `Replayed message from ${envelope.from} (nonce: ${envelope.nonce})`,
+          nonceResult === 'replay' ? 'replay_detected' : 'replay_cache_full',
+          nonceResult === 'replay'
+            ? `Replayed message from ${envelope.from} (nonce: ${envelope.nonce})`
+            : `Replay cache is full — dropping message from ${envelope.from}`,
           envelope.from,
         );
         return;

@@ -31,7 +31,7 @@ interface GhostNetInternals {
   } | null;
   peerKeys: Map<string, Uint8Array>;
   seenNonces: Map<string, number>;
-  checkNonce: (nonce: string, timestamp: number) => boolean;
+  checkNonce: (nonce: string, timestamp: number) => 'accepted' | 'replay' | 'capacity_exceeded';
 }
 
 function internals(gn: GhostNet): GhostNetInternals {
@@ -155,6 +155,23 @@ describe('VULN-02 FIXED: Nonce and timestamp now required', () => {
 // VULN-03 FIXED: Time-based nonce expiry prevents flood replay
 // ─────────────────────────────────────────────────────────────
 describe('VULN-03 FIXED: Nonce eviction is time-based, not count-based', () => {
+  it('fails closed instead of evicting a still-fresh replay nonce at capacity', () => {
+    const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
+    gn.createIdentity();
+    const seenNonces = internals(gn).seenNonces;
+    const checkNonce = internals(gn).checkNonce.bind(gn);
+    const now = Date.now();
+    const protectedNonce = 'captured-message-nonce';
+
+    seenNonces.set(protectedNonce, now);
+    for (let i = 1; i < 10_000; i++) seenNonces.set(`flood-${i}`, now);
+
+    expect(checkNonce('new-while-full', now)).toBe('capacity_exceeded');
+    expect(seenNonces.size).toBe(10_000);
+    expect(seenNonces.has(protectedNonce)).toBe(true);
+    expect(checkNonce(protectedNonce, now)).toBe('replay');
+  });
+
   it('nonce registry uses time-based expiry — recent nonces survive eviction sweeps', async () => {
     const gn = new GhostNet({ endpoint: 'wss://dummy.test' });
     const id = gn.createIdentity();
