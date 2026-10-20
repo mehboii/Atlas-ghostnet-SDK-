@@ -22,6 +22,7 @@ const MAX_MESSAGE_BYTES = 64 * 1024; // 64 KB max message payload
 const NONCE_REGISTRY_MAX = 10_000;   // Max tracked nonces before time-based eviction
 const MESSAGE_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes — reject older messages
 const SIGNATURE_VERSION = 'v1';
+type NonceCheckResult = 'accepted' | 'replay' | 'capacity_exceeded';
 
 /**
  * Main Atlas SDK client.
@@ -399,9 +400,9 @@ export class GhostNet {
    * Call this only after a message has passed freshness and signature
    * checks, so the registry is never polluted by forged or stale traffic.
    */
-  private checkNonce(nonce: string, timestamp: number): boolean {
+  private checkNonce(nonce: string, timestamp: number): NonceCheckResult {
     if (this.seenNonces.has(nonce)) {
-      return false;
+      return 'replay';
     }
 
     // Time-based eviction: remove nonces older than the freshness window.
@@ -414,17 +415,15 @@ export class GhostNet {
       }
     }
 
-    // Hard cap: under sustained high throughput, many nonces may still be
-    // within the freshness window and survive the sweep above. Evict the
-    // oldest entries (Map preserves insertion order) to bound memory.
-    while (this.seenNonces.size >= NONCE_REGISTRY_MAX) {
-      const oldest = this.seenNonces.keys().next().value;
-      if (oldest === undefined) break;
-      this.seenNonces.delete(oldest);
+    // Fail closed when the registry is full of still-fresh nonces. Evicting
+    // one would allow an authenticated flood to remove replay evidence for a
+    // captured message that is still inside the freshness window.
+    if (this.seenNonces.size >= NONCE_REGISTRY_MAX) {
+      return 'capacity_exceeded';
     }
 
     this.seenNonces.set(nonce, timestamp);
-    return true;
+    return 'accepted';
   }
 
   /**
@@ -664,10 +663,13 @@ export class GhostNet {
       // FIX VULN-03: Record the nonce LAST — only fresh, authenticated
       // messages consume registry space, so forged/stale traffic can neither
       // pollute the registry nor "burn" a nonce a legitimate sender will use.
-      if (!this.checkNonce(envelope.nonce, envelope.timestamp)) {
+      const nonceResult = this.checkNonce(envelope.nonce, envelope.timestamp);
+      if (nonceResult !== 'accepted') {
         this.emitSecurity(
-          'replay_detected',
-          `Replayed message from ${envelope.from} (nonce: ${envelope.nonce})`,
+          nonceResult === 'replay' ? 'replay_detected' : 'replay_cache_full',
+          nonceResult === 'replay'
+            ? `Replayed message from ${envelope.from} (nonce: ${envelope.nonce})`
+            : `Replay cache is full — dropping message from ${envelope.from}`,
           envelope.from,
         );
         return;
