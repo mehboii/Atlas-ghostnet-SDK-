@@ -1,6 +1,6 @@
 {
   "name": "@n11x/atlas",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Atlas SDK for the GhostNet encrypted mesh network",
   "license": "MIT",
   "author": "N11X Labs",
