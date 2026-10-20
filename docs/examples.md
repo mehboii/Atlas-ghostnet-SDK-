@@ -3,7 +3,7 @@
 ## Basic: Create Identity and Connect
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const gn = new GhostNet({ debug: true });
 
@@ -23,7 +23,7 @@ setTimeout(() => gn.disconnect(), 10_000);
 ## Restore Identity on a New Device
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const gn = new GhostNet();
 
@@ -37,7 +37,7 @@ await gn.connect();
 ## Send and Receive Messages
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const gn = new GhostNet({ debug: true });
 gn.createIdentity();
@@ -65,7 +65,7 @@ Run in two separate terminals to test messaging:
 **Terminal 1 — Alice:**
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const gn = new GhostNet({ debug: true });
 const id = gn.createIdentity();
@@ -82,7 +82,7 @@ console.log('Alice is online. Waiting for messages...');
 **Terminal 2 — Bob:**
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const ALICE_NODE_ID = '0x...'; // Paste Alice's node ID here
 
@@ -103,7 +103,7 @@ import {
   IdentityError,
   EncryptionError,
   PeerNotFoundError,
-} from '@n11x/ghostnet-sdk';
+} from '@n11x/atlas';
 
 const gn = new GhostNet();
 
@@ -142,7 +142,7 @@ try {
 
 ```ts
 import express from 'express';
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { GhostNet } from '@n11x/atlas';
 
 const app = express();
 const gn = new GhostNet();
@@ -187,7 +187,7 @@ init().then(() => {
 
 ```tsx
 import { useEffect, useRef, useState } from 'react';
-import { GhostNet, IncomingMessage } from '@n11x/ghostnet-sdk';
+import { GhostNet, IncomingMessage } from '@n11x/atlas';
 
 function useGhostNet(seedPhrase?: string) {
   const gnRef = useRef<GhostNet | null>(null);

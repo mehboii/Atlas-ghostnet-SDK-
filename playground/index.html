@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GhostNet SDK Playground</title>
+  <title>Atlas SDK Playground</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -160,7 +160,7 @@
 </head>
 <body>
   <header>
-    <h1>GhostNet SDK Playground</h1>
+    <h1>Atlas SDK Playground</h1>
     <p>Interactive demo — test identity, encryption, and messaging in your browser</p>
   </header>
 
@@ -248,10 +248,10 @@
 
     window.clearOutput = () => { output.innerHTML = ''; };
 
-    // Load SDK from the IIFE browser bundle (window.GhostNetSDK)
+    // Load SDK from the IIFE browser bundle (window.AtlasSDK)
     try {
-      window.SDK = window.GhostNetSDK;
-      if (!SDK || !SDK.GhostNet) throw new Error('GhostNetSDK not found on window');
+      window.SDK = window.AtlasSDK;
+      if (!SDK || !SDK.Atlas) throw new Error('AtlasSDK not found on window');
       log('SDK loaded successfully', 'success');
       log(`Exports: ${Object.keys(SDK).join(', ')}`, 'dim');
     } catch (e) {

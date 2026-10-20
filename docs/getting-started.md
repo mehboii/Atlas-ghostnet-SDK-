@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-npm install @n11x/ghostnet-sdk
+npm install @n11x/atlas
 ```
 
 Or install directly from GitHub:
@@ -21,10 +21,10 @@ npm install mehboii/ghostnet-SDK
 ## Quick Start
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { Atlas } from '@n11x/atlas';
 
 // 1. Create client
-const gn = new GhostNet({ debug: true });
+const gn = new Atlas({ debug: true });
 
 // 2. Create or restore identity
 const identity = gn.createIdentity();
@@ -51,7 +51,7 @@ gn.disconnect();
 The same seed phrase always produces the same identity. Use this to restore on a new device:
 
 ```ts
-const gn = new GhostNet();
+const gn = new Atlas();
 const identity = gn.loadIdentity('your twelve word seed phrase goes here ...');
 console.log(identity.nodeId); // same as the original
 ```
@@ -59,9 +59,9 @@ console.log(identity.nodeId); // same as the original
 ## CommonJS Usage
 
 ```js
-const { GhostNet } = require('@n11x/ghostnet-sdk');
+const { Atlas } = require('@n11x/atlas');
 
-const gn = new GhostNet();
+const gn = new Atlas();
 const identity = gn.createIdentity();
 console.log(identity.nodeId);
 ```

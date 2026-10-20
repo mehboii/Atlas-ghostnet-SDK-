@@ -4,7 +4,7 @@
  * Uses fast-check to throw random/garbage data at every crypto surface
  * and verify the SDK never crashes — only throws typed errors.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import fc from 'fast-check';
 import { createIdentity, loadIdentity } from '../src/crypto/identity.js';
 import {

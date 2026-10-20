@@ -1,5 +1,5 @@
 /**
- * hello-ghostnet — minimal example of using @n11x/ghostnet-sdk.
+ * hello-ghostnet — minimal example of using @n11x/atlas.
  *
  * Creates an identity, connects to the GhostNet mesh, sends a message
  * to a peer, logs any reply, then disconnects.

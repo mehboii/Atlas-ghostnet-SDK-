@@ -1,5 +1,5 @@
 /**
- * Base error class for all GhostNet SDK errors.
+ * Base error class for Atlas SDK errors.
  *
  * @example
  * ```ts

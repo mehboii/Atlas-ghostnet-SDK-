@@ -1,7 +1,7 @@
 {
   "name": "create-ghostnet-app",
   "version": "0.1.0",
-  "description": "Scaffold a new GhostNet SDK project",
+  "description": "Scaffold an Atlas SDK project for GhostNet",
   "license": "MIT",
   "author": "N11X Labs",
   "type": "module",

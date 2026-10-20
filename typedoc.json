@@ -1,7 +1,7 @@
 {
   "entryPoints": ["src/index.ts"],
   "out": "docs/api",
-  "name": "@n11x/ghostnet-sdk",
+  "name": "@n11x/atlas",
   "readme": "README.md",
   "excludeInternal": true,
   "excludePrivate": true,
@@ -9,7 +9,7 @@
   "includeVersion": true,
   "navigationLinks": {
     "GitHub": "https://github.com/n11x/ghostnet-sdk",
-    "npm": "https://www.npmjs.com/package/@n11x/ghostnet-sdk"
+    "npm": "https://www.npmjs.com/package/@n11x/atlas"
   },
   "plugin": [],
   "theme": "default",

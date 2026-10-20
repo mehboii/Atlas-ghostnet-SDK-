@@ -10,10 +10,15 @@ import type { Identity } from '../types.js';
  * Zeroes the full 64-byte BIP-39 seed after slicing.
  */
 function seedFromMnemonic(mnemonic: string): Uint8Array {
-  const seed64 = new Uint8Array(bip39.mnemonicToSeedSync(mnemonic));
+  // bip39 returns its own Buffer; `new Uint8Array(...)` copies the bytes,
+  // so we must zero both the copy and the original to avoid leaving the
+  // full 64-byte seed in memory until garbage collection.
+  const rawSeed = bip39.mnemonicToSeedSync(mnemonic);
+  const seed64 = new Uint8Array(rawSeed);
   const seed32 = new Uint8Array(32);
   seed32.set(seed64.subarray(0, 32));
   seed64.fill(0);
+  rawSeed.fill(0);
   return seed32;
 }
 

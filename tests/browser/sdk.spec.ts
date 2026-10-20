@@ -1,5 +1,5 @@
 /**
- * Browser-based tests for @n11x/ghostnet-sdk.
+ * Browser-based tests for @n11x/atlas.
  *
  * These run via Playwright in headless Chromium and Firefox to verify
  * the SDK works in browser environments (WebSocket, crypto, etc.).
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test.describe('GhostNet SDK — browser', () => {
+test.describe('Atlas SDK — browser', () => {
   test('creates identity with valid nodeId format', async ({ page }) => {
     // Serve the built SDK bundle in-browser
     await page.goto('about:blank');

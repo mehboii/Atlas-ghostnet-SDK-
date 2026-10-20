@@ -8,6 +8,23 @@ export interface GhostNetOptions {
   requireEncryption?: boolean;
 }
 
+/** A public key learned from a signed peer announcement, signed message, or supplied out of band. */
+export interface PeerInfo {
+  nodeId: string;
+  publicKey: string;
+  lastSeen: number | null;
+  source: 'announcement' | 'message' | 'manual';
+}
+
+/** Local client state. Relay health is limited to WebSocket state; it is not a delivery receipt. */
+export interface NetworkStatus {
+  connected: boolean;
+  /** Relay origin for display; path and query are omitted to protect credentials. */
+  endpoint: string;
+  nodeId: string | null;
+  knownPeers: number;
+}
+
 /** An Ed25519 identity on the GhostNet mesh. */
 export interface Identity {
   /** BIP-39 mnemonic seed phrase (12 words). */
@@ -48,4 +65,5 @@ export interface GhostNetEvents {
   connect: () => void;
   disconnect: (reason: string) => void;
   security: (event: SecurityEvent) => void;
+  'peer:discovered': (peer: PeerInfo) => void;
 }

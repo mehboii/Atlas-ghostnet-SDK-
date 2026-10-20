@@ -1,17 +1,17 @@
 # API Reference
 
-## `GhostNet`
+## `Atlas` (also exported as `GhostNet`)
 
 The main SDK client class. Manages identity, connection, and messaging.
 
 ```ts
-import { GhostNet } from '@n11x/ghostnet-sdk';
+import { Atlas } from '@n11x/atlas';
 ```
 
 ### Constructor
 
 ```ts
-new GhostNet(options?: GhostNetOptions)
+new Atlas(options?: AtlasOptions)
 ```
 
 | Option     | Type      | Default                                        | Description                    |
@@ -23,10 +23,10 @@ new GhostNet(options?: GhostNetOptions)
 
 ```ts
 // Default — connects to production relay
-const gn = new GhostNet();
+const gn = new Atlas();
 
 // Custom relay with debug logging
-const gn = new GhostNet({
+const gn = new Atlas({
   endpoint: 'wss://my-relay.example.com',
   debug: true,
 });

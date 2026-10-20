@@ -2,7 +2,7 @@
 
 ## Threat Model
 
-The GhostNet SDK is designed to protect against:
+The Atlas SDK is designed to protect against:
 
 | Threat                     | Protection                                          |
 | -------------------------- | --------------------------------------------------- |
